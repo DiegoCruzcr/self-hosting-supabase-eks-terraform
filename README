@@ -1,0 +1,3 @@
+terraform plan -var-file="envs/dev/projects.auto.tfvars" -var-file="envs/dev/terraform.tfvars"
+terraform apply -var-file="envs/dev/projects.auto.tfvars" -var-file="envs/dev/terraform.tfvars"
+terraform destroy -var-file="envs/dev/projects.auto.tfvars" -var-file="envs/dev/terraform.tfvars"

@@ -1,0 +1,28 @@
+# Terraform state and backend
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+terraform.tfstate.d/
+
+# Secrets — never commit
+*.tfvars
+!terraform.tfvars           # terraform.tfvars has only non-secret values
+projects.auto.tfvars        # always excluded — contains project secrets
+
+# Generated files (DB init scripts with embedded passwords)
+**/.generated/
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Crash log
+crash.log
+crash.*.log
+
+# Plan output files
+*.tfplan
