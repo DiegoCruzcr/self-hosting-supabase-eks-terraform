@@ -8,11 +8,6 @@ variable "project_name" {
   type        = string
 }
 
-variable "aurora_host" {
-  description = "Aurora cluster writer endpoint"
-  type        = string
-}
-
 variable "jwt_secret" {
   description = "JWT signing secret (min 32 chars)"
   type        = string
@@ -63,4 +58,21 @@ variable "cluster_oidc_provider_arn" {
 variable "cluster_oidc_issuer_url" {
   description = "OIDC issuer URL of the EKS cluster (for IRSA trust policy)"
   type        = string
+}
+
+variable "external_url" {
+  description = "Publicly reachable base URL for this project (used for Studio, Auth, Kong ingress host). E.g. http://<alb-dns> or https://myproject.example.com"
+  type        = string
+}
+
+variable "vault_enc_key" {
+  description = "32-char hex key for pgsodium/Supabase Vault (VAULT_ENC_KEY in postgres container). Generate with: openssl rand -hex 16"
+  type        = string
+  sensitive   = false
+}
+
+variable "meta_crypto_key" {
+  description = "32-char hex key used by pg-meta (CRYPTO_KEY) and Studio (PG_META_CRYPTO_KEY) to encrypt/decrypt connection strings. Generate with: openssl rand -hex 16"
+  type        = string
+  sensitive   = false
 }

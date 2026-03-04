@@ -19,19 +19,7 @@ module "vpc" {
 #   node_max_size      = var.eks_node_max_size
 # }
 
-module "aurora" {
-  source = "./modules/aurora"
-
-  aws_region             = var.aws_region
-  vpc_id                 = module.vpc.vpc_id
-  db_subnet_group_name   = module.vpc.public_db_subnet_group_name
-  node_security_group_id = "subnet-0c9b8f1e2d3a4b5c6" # module.eks.node_security_group_id
-  # node_security_group_id = module.eks.node_security_group_id
-  aurora_engine_version  = var.aurora_engine_version
-  aurora_min_capacity    = var.aurora_min_capacity
-  aurora_max_capacity    = var.aurora_max_capacity
-  first_project_name     = var.projects[0].name
-}
+# Aurora removed — using supabase/postgres pod per project instead
 
 # module "aurora_db_init" {
 #   source   = "./modules/aurora-db-init"

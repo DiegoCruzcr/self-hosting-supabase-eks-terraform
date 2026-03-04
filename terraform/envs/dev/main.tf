@@ -84,44 +84,6 @@ module "eks" {
   node_max_size      = var.eks_node_max_size
 }
 
-# ─── Aurora ───────────────────────────────────────────────────────────────────
-module "aurora" {
-  source = "../../modules/aurora"
-
-  aws_region             = var.aws_region
-  vpc_id                 = module.vpc.vpc_id
-  # Use public subnet group so the instance can receive a public IP
-  db_subnet_group_name   = module.vpc.public_db_subnet_group_name
-  node_security_group_id = module.eks.node_security_group_id
-  aurora_engine_version  = var.aurora_engine_version
-  aurora_min_capacity    = var.aurora_min_capacity
-  aurora_max_capacity    = var.aurora_max_capacity
-  publicly_accessible    = true
-  # Restrict to your own IP for security: ["203.0.113.42/32"]
-  # Leave as 0.0.0.0/0 only for dev; never in production
-  allowed_cidr_blocks    = ["0.0.0.0/0"]
-  first_project_name     = var.projects[0].name
-}
-
-# ─── Aurora DB Init (per project) ────────────────────────────────────────────
-module "aurora_db_init" {
-  source   = "../../modules/aurora-db-init"
-  for_each = { for p in var.projects : p.name => p }
-
-  aws_region               = var.aws_region
-  aurora_host              = module.aurora.cluster_endpoint
-  project_name             = each.value.name
-  master_secret_arn        = module.aurora.master_secret_arn
-  authenticator_password   = each.value.authenticator_password
-  auth_password            = each.value.auth_password
-  storage_password         = each.value.storage_password
-  realtime_password        = each.value.realtime_password
-  admin_password           = each.value.admin_password
-  reboot_complete_trigger  = module.aurora.reboot_id
-
-  depends_on = [module.aurora]
-}
-
 # ─── Supabase Project (per project) ──────────────────────────────────────────
 module "supabase_project" {
   source   = "../../modules/supabase-project"
@@ -129,7 +91,6 @@ module "supabase_project" {
 
   aws_region                = var.aws_region
   project_name              = each.value.name
-  aurora_host               = module.aurora.cluster_endpoint
   jwt_secret                = each.value.jwt_secret
   anon_key                  = each.value.anon_key
   service_key               = each.value.service_key
@@ -137,25 +98,19 @@ module "supabase_project" {
   studio_password           = each.value.studio_password
   realtime_enc_key          = each.value.realtime_enc_key
   realtime_secret_key_base  = each.value.realtime_secret_key_base
+  external_url              = each.value.external_url
+  vault_enc_key             = each.value.vault_enc_key
+  meta_crypto_key           = each.value.meta_crypto_key
   cluster_oidc_provider_arn = module.eks.cluster_oidc_provider_arn
   cluster_oidc_issuer_url   = module.eks.cluster_oidc_issuer_url
 
-  depends_on = [module.aurora_db_init, module.eks]
+  depends_on = [module.eks]
 }
 
 # ─── Outputs ──────────────────────────────────────────────────────────────────
 
 output "eks_cluster_endpoint" {
   value = module.eks.cluster_endpoint
-}
-
-output "aurora_cluster_endpoint" {
-  value = module.aurora.cluster_endpoint
-}
-
-output "aurora_master_secret_arn" {
-  value     = module.aurora.master_secret_arn
-  sensitive = false
 }
 
 output "project_namespaces" {

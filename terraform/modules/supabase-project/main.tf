@@ -10,7 +10,6 @@ resource "helm_release" "supabase" {
 
   values = [templatefile("${path.module}/values.yaml.tpl", {
     project_name             = var.project_name
-    aurora_host              = var.aurora_host
     aws_region               = var.aws_region
     anon_key                 = var.anon_key
     service_key              = var.service_key
@@ -21,6 +20,9 @@ resource "helm_release" "supabase" {
     realtime_secret_key_base = var.realtime_secret_key_base
     storage_irsa_role_arn    = aws_iam_role.storage_irsa.arn
     s3_bucket_name           = aws_s3_bucket.storage.id
+    external_url             = var.external_url
+    vault_enc_key            = var.vault_enc_key
+    meta_crypto_key          = var.meta_crypto_key
   })]
 
   depends_on = [aws_iam_role.storage_irsa, aws_s3_bucket.storage]

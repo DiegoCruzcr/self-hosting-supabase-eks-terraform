@@ -10,24 +10,6 @@ variable "cluster_name" {
   default     = "supabase-eks"
 }
 
-variable "aurora_engine_version" {
-  description = "Aurora PostgreSQL engine version"
-  type        = string
-  # default     = "15.12"
-}
-
-variable "aurora_min_capacity" {
-  description = "Aurora Serverless v2 minimum ACUs"
-  type        = number
-  default     = 0.5
-}
-
-variable "aurora_max_capacity" {
-  description = "Aurora Serverless v2 maximum ACUs"
-  type        = number
-  default     = 8
-}
-
 variable "eks_node_instance_type" {
   description = "EC2 instance type for EKS worker nodes"
   type        = string
@@ -61,12 +43,11 @@ variable "projects" {
     anon_key                 = string
     service_key              = string
     authenticator_password   = string
-    auth_password            = string
-    storage_password         = string
-    realtime_password        = string
-    admin_password           = string
     realtime_enc_key         = string
     realtime_secret_key_base = string
     studio_password          = string
+    external_url             = string
+    vault_enc_key            = string
+    meta_crypto_key          = string
   }))
 }
