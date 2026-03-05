@@ -101,9 +101,11 @@ module "supabase_project" {
   external_url              = each.value.external_url
   vault_enc_key             = each.value.vault_enc_key
   meta_crypto_key           = each.value.meta_crypto_key
+  logflare_public_token     = each.value.logflare_public_token
+  logflare_private_token    = each.value.logflare_private_token
   cluster_oidc_provider_arn = module.eks.cluster_oidc_provider_arn
   cluster_oidc_issuer_url   = module.eks.cluster_oidc_issuer_url
-
+  
   depends_on = [module.eks]
 }
 

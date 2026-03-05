@@ -49,5 +49,7 @@ variable "projects" {
     external_url             = string
     vault_enc_key            = string
     meta_crypto_key          = string
+    logflare_public_token    = string
+    logflare_private_token   = string
   }))
 }

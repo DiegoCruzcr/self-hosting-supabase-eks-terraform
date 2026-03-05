@@ -23,6 +23,8 @@ resource "helm_release" "supabase" {
     external_url             = var.external_url
     vault_enc_key            = var.vault_enc_key
     meta_crypto_key          = var.meta_crypto_key
+    logflare_public_token    = var.logflare_public_token
+    logflare_private_token   = var.logflare_private_token
   })]
 
   depends_on = [aws_iam_role.storage_irsa, aws_s3_bucket.storage]

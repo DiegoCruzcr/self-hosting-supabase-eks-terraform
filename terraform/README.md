@@ -90,6 +90,19 @@ projects = [
     # Realtime keys
     realtime_enc_key         = "..."  # hex >= 32 chars
     realtime_secret_key_base = "..."  # string >= 64 chars
+
+    # Public base URL (set after first apply — use ALB DNS from: kubectl get ingress -n supabase-<name>)
+    external_url = "http://<alb-dns>"
+
+    # pgsodium Vault encryption key
+    vault_enc_key   = "..."  # 32-char hex (openssl rand -hex 16)
+
+    # pg-meta / Studio connection string encryption key
+    meta_crypto_key = "..."  # 32-char hex (openssl rand -hex 16)
+
+    # Logflare tokens — power the Logs tab in Studio
+    logflare_public_token  = "..."  # hex 64 chars (openssl rand -hex 32)
+    logflare_private_token = "..."  # hex 64 chars (openssl rand -hex 32)
   }
 ]
 ```
@@ -130,6 +143,16 @@ openssl rand -hex 32
 openssl rand -hex 64
 ```
 
+**`vault_enc_key`** and **`meta_crypto_key`** — 32-char hex:
+```bash
+openssl rand -hex 16
+```
+
+**`logflare_public_token`** and **`logflare_private_token`** — 64-char hex:
+```bash
+openssl rand -hex 32
+```
+
 > **Important:** Never commit `projects.auto.tfvars` with real secrets.
 > In CI/CD, pass secrets via environment variable:
 > ```bash
@@ -162,14 +185,14 @@ cd terraform
 terraform init -chdir=envs/dev
 
 # Preview what will be created
-terraform plan \
-  -var-file="envs/dev/projects.auto.tfvars" \
-  -var-file="envs/dev/terraform.tfvars"
+terraform -chdir=envs/dev plan -var-file="projects.auto.tfvars" -var-file="terraform.tfvars"  2>&1
 
 # Create infrastructure
-terraform apply \
-  -var-file="envs/dev/projects.auto.tfvars" \
-  -var-file="envs/dev/terraform.tfvars"
+terraform -chdir=envs/dev apply -var-file="projects.auto.tfvars" -var-file="terraform.tfvars" 
+
+# Destroy Infrastructure
+terraform -chdir=envs/dev destroy -var-file="projects.auto.tfvars" -var-file="terraform.tfvars" -auto-approve 2>&1
+
 ```
 
 Apply order (automatic):
@@ -229,6 +252,11 @@ projects = [
     studio_password          = "..."
     realtime_enc_key         = "..."
     realtime_secret_key_base = "..."
+    external_url             = "http://<alb-dns>"
+    vault_enc_key            = "..."
+    meta_crypto_key          = "..."
+    logflare_public_token    = "..."
+    logflare_private_token   = "..."
   }
 ]
 ```

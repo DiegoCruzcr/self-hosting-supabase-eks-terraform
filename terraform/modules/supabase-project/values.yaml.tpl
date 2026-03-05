@@ -3,9 +3,9 @@ deployment:
   db:
     enabled: true
   analytics:
-    enabled: false
+    enabled: true
   vector:
-    enabled: false
+    enabled: true
   minio:
     enabled: false
 
@@ -32,6 +32,9 @@ secret:
     secretKeyBase: "${realtime_secret_key_base}"
   meta:
     cryptoKey: "${meta_crypto_key}"
+  analytics:
+    publicAccessToken:  "${logflare_public_token}"
+    privateAccessToken: "${logflare_private_token}"
 
 # ─── Service Accounts (IRSA for Storage) ──────────────────────────────────────
 serviceAccount:
@@ -45,10 +48,12 @@ serviceAccount:
 # Chart reads from .Values.environment.<service> — NOT <service>.environment
 environment:
   studio:
-    SUPABASE_PUBLIC_URL:       "${external_url}"
-    DEFAULT_ORGANIZATION_NAME: "${project_name}"
-    DEFAULT_PROJECT_NAME:      "${project_name}"
-    NEXT_PUBLIC_ENABLE_LOGS:   "true"
+    SUPABASE_PUBLIC_URL:             "${external_url}"
+    DEFAULT_ORGANIZATION_NAME:       "${project_name}"
+    DEFAULT_PROJECT_NAME:            "${project_name}"
+    NEXT_PUBLIC_ENABLE_LOGS:         "true"
+    LOGFLARE_URL:                    "http://supabase-${project_name}-analytics:4000"
+    NEXT_ANALYTICS_BACKEND_PROVIDER: "postgres"
 
   auth:
     API_EXTERNAL_URL:              "${external_url}"
@@ -91,6 +96,7 @@ environment:
     DNS_NODES:              "''"
     APP_NAME:               "realtime"
     DB_IP_VERSION:          "ipv4"
+    DB_ENC_KEY:             "${realtime_enc_key}"
 
   storage:
     DB_PORT:            "5432"
@@ -109,6 +115,20 @@ environment:
     DB_SSL:       "disable"
     DB_DRIVER:    "postgres"
     PG_META_PORT: "8080"
+
+  analytics:
+    LOGFLARE_NODE_HOST:             "127.0.0.1"
+    DB_USERNAME:                    "supabase_admin"
+    DB_DATABASE:                    "_supabase"
+    DB_PORT:                        "5432"
+    DB_DRIVER:                      "postgresql"
+    DB_SCHEMA:                      "_analytics"
+    POSTGRES_BACKEND_SCHEMA:        "_analytics"
+    LOGFLARE_SINGLE_TENANT:         "true"
+    LOGFLARE_SUPABASE_MODE:         "true"
+    LOGFLARE_FEATURE_FLAG_OVERRIDE: "multibackend=true"
+    POSTGRES_BACKEND_URL:           "postgresql://supabase_admin:${authenticator_password}@supabase-${project_name}-db:5432/_supabase"
+    LOGFLARE_LOG_LEVEL:             "warn"
 
   # Note: SUPABASE_ANON_KEY and SUPABASE_SERVICE_KEY are injected by the chart
   # from secret.jwt via secretKeyRef — do NOT set them here (would cause duplicate conflict)

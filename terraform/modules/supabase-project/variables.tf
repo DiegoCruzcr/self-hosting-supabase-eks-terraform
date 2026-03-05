@@ -76,3 +76,15 @@ variable "meta_crypto_key" {
   type        = string
   sensitive   = false
 }
+
+variable "logflare_public_token" {
+  description = "Logflare public access token used by Vector and Studio to authenticate with the analytics service. Generate with: openssl rand -hex 32"
+  type        = string
+  sensitive   = true
+}
+
+variable "logflare_private_token" {
+  description = "Logflare private access token for admin operations. Generate with: openssl rand -hex 32"
+  type        = string
+  sensitive   = true
+}
