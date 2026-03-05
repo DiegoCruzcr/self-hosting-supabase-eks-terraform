@@ -27,3 +27,8 @@ output "cluster_name" {
   description = "EKS cluster name"
   value       = aws_eks_cluster.main.name
 }
+
+output "efs_file_system_id" {
+  description = "EFS file system ID for edge functions (RWX storage)"
+  value       = aws_efs_file_system.functions.id
+}

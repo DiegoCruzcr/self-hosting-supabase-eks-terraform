@@ -88,3 +88,8 @@ variable "logflare_private_token" {
   type        = string
   sensitive   = true
 }
+
+variable "efs_file_system_id" {
+  description = "EFS file system ID for edge functions RWX storage"
+  type        = string
+}

@@ -105,7 +105,8 @@ module "supabase_project" {
   logflare_private_token    = each.value.logflare_private_token
   cluster_oidc_provider_arn = module.eks.cluster_oidc_provider_arn
   cluster_oidc_issuer_url   = module.eks.cluster_oidc_issuer_url
-  
+  efs_file_system_id        = module.eks.efs_file_system_id
+
   depends_on = [module.eks]
 }
 

@@ -8,13 +8,28 @@ deployment:
     enabled: true
   minio:
     enabled: false
+  functions:
+    enabled: true
 
-# ─── Persistence (EBS via EBS CSI driver installed in EKS module) ─────────────
+# ─── Persistence ──────────────────────────────────────────────────────────────
 persistence:
   db:
     enabled: true
     storageClassName: "gp2"
     size: "20Gi"
+  # Edge Functions use a pre-created EFS PVC (RWX) to support autoscaling.
+  # The PVC is created by Terraform (supabase-project/efs.tf) before this Helm release.
+  functions:
+    enabled: true
+    existingClaim: "supabase-${project_name}-edge-functions"
+    storageClassName: "efs-sc"
+    size: "5Gi"
+    accessModes:
+      - ReadWriteMany
+  # Deno module cache disabled — a RWO PVC would block autoscaling (only 1 pod can mount).
+  # Each pod rebuilds its cache ephemerally, which is acceptable for dev/staging.
+  deno:
+    enabled: false
 
 # ─── Secrets ──────────────────────────────────────────────────────────────────
 secret:
@@ -129,6 +144,14 @@ environment:
     LOGFLARE_FEATURE_FLAG_OVERRIDE: "multibackend=true"
     POSTGRES_BACKEND_URL:           "postgresql://supabase_admin:${authenticator_password}@supabase-${project_name}-db:5432/_supabase"
     LOGFLARE_LOG_LEVEL:             "warn"
+
+  functions:
+    DB_USERNAME: supabase_admin
+    DB_PORT: "5432"
+    DB_NAME: postgres
+    DB_DRIVER: postgresql
+    DB_SSL: disable
+    VERIFY_JWT: "true"
 
   # Note: SUPABASE_ANON_KEY and SUPABASE_SERVICE_KEY are injected by the chart
   # from secret.jwt via secretKeyRef — do NOT set them here (would cause duplicate conflict)

@@ -17,6 +17,7 @@ EKS Cluster
 ├── Namespace: supabase-alpha
 │   ├── Kong (API Gateway + Ingress)
 │   ├── PostgREST, GoTrue, Realtime, Storage API, Meta, Studio, ImgProxy
+│   ├── Edge Runtime (functions)  ← EFS PVC (RWX, shared across replicas)
 │   ├── Logflare (analytics)
 │   ├── Vector (log collector)
 │   └── supabase/postgres StatefulSet  ← DB pod (EBS PVC, gp2, 20Gi)
@@ -37,6 +38,7 @@ Each project is fully isolated: its own namespace, Postgres pod, and S3 bucket.
 | Compute | AWS EKS (t3.medium nodes) |
 | Database | `supabase/postgres:15.8.1.085` StatefulSet (EBS-backed, 20Gi) |
 | Storage | AWS S3 per project (IRSA — no static credentials) |
+| Edge Functions | `supabase/edge-runtime:v1.70.3` + AWS EFS (RWX, per-project access point) |
 | Ingress | AWS ALB via Load Balancer Controller |
 | Analytics | Logflare + Vector (log shipping) |
 | IaC | Terraform >= 1.5 |
@@ -215,8 +217,8 @@ terraform -chdir=envs/dev destroy \
 
 Apply order (automatic):
 1. **VPC** — base network
-2. **EKS** — cluster, node group, addons (LBC + EBS CSI)
-3. **supabase-project** (per project): S3 bucket, IRSA role, Helm release (includes Postgres pod)
+2. **EKS** — cluster, node group, addons (LBC + EBS CSI + EFS CSI), EFS file system + mount targets
+3. **supabase-project** (per project): namespace, EFS access point, PV/PVC, S3 bucket, IRSA role, Helm release
 
 ---
 
@@ -250,6 +252,94 @@ curl -X POST http://<ALB-DNS>/auth/v1/signup \
 ```
 
 > After the first apply, copy the ALB DNS and set `external_url` in `projects.auto.tfvars`, then run `terraform apply` again so Studio and Auth have the correct public URL.
+
+---
+
+## Deploying Edge Functions
+
+Edge Functions run on `supabase/edge-runtime` and are served at `/functions/v1/<name>`. Each project has an EFS volume mounted at `/home/deno/functions/` — **the function name is the directory name**.
+
+```
+/home/deno/functions/
+├── main/          ← built-in router (managed by the chart, do not modify)
+├── hello/         ← available at /functions/v1/hello
+└── send-email/    ← available at /functions/v1/send-email
+```
+
+### Deploy a function
+
+```bash
+# Connect to cluster
+aws eks update-kubeconfig --region us-east-1 --name supabase-eks
+
+# Copy a local function directory into the pod
+kubectl cp ./my-function/ \
+  supabase-alpha/$(kubectl get pod -n supabase-alpha -l app.kubernetes.io/name=functions -o jsonpath='{.items[0].metadata.name}'):/home/deno/functions/my-function/
+```
+
+No restart required — the edge runtime picks up new directories automatically. Since the volume is EFS (ReadWriteMany), all autoscaled replicas see the new function immediately.
+
+### Deploy a function (Linux / CI-CD)
+
+Recommended for CI/CD pipelines (GitHub Actions, GitLab CI, etc.). Use a tar pipe — more portable than `kubectl cp`:
+
+```bash
+# From the directory containing your function folder
+cd path/to/supabase/functions
+
+POD=$(kubectl get pod -n supabase-alpha -l app.kubernetes.io/name=functions -o jsonpath='{.items[0].metadata.name}')
+
+tar cf - my-function | kubectl exec -i -n supabase-alpha "$POD" -- \
+  tar xf - --no-same-owner -C /home/deno/functions/
+```
+
+- `--no-same-owner` — avoids permission errors when the container runs as a different UID
+
+### Deploy a function (Windows / Git Bash)
+
+`kubectl cp` does not work correctly on Windows. Use a tar pipe instead:
+
+```bash
+# From the directory containing your function folder
+cd path/to/supabase/functions
+
+POD=$(kubectl get pod -n supabase-alpha -l app.kubernetes.io/name=functions -o jsonpath='{.items[0].metadata.name}')
+
+tar cf - my-function | MSYS_NO_PATHCONV=1 kubectl exec -i -n supabase-alpha "$POD" -- \
+  tar xf - --no-same-owner -C /home/deno/functions/
+```
+
+- `MSYS_NO_PATHCONV=1` — prevents Git Bash from converting Unix paths to Windows paths
+- `--no-same-owner` — avoids ownership errors when extracting as a different UID
+
+### Get the anon key
+
+```bash
+kubectl get secret supabase-alpha-jwt -n supabase-alpha \
+  -o jsonpath='{.data.anonKey}' | base64 -d
+```
+
+### Rollout (force restart if needed)
+
+```bash
+kubectl rollout restart deployment -n supabase-alpha \
+  $(kubectl get deploy -n supabase-alpha -l app.kubernetes.io/name=functions -o jsonpath='{.items[0].metadata.name}')
+```
+
+### Call the function
+
+```bash
+curl http://<ALB-DNS>/functions/v1/my-function \
+  -H "Authorization: Bearer <anon_key>"
+```
+
+### Verify the volume is mounted
+
+```bash
+kubectl describe pod -n supabase-alpha \
+  $(kubectl get pod -n supabase-alpha -l app.kubernetes.io/name=functions -o jsonpath='{.items[0].metadata.name}') \
+  | grep -A5 Mounts
+```
 
 ---
 
