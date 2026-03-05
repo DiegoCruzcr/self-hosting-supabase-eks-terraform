@@ -3,9 +3,8 @@ resource "helm_release" "supabase" {
   repository       = "https://supabase-community.github.io/supabase-kubernetes"
   chart            = "supabase"
   version          = "0.5.0"
-  namespace        = "supabase-${var.project_name}"
-  create_namespace = true
-  wait             = true
+  namespace = "supabase-${var.project_name}"
+  wait      = true
   timeout          = 600
 
   values = [templatefile("${path.module}/values.yaml.tpl", {
@@ -27,5 +26,9 @@ resource "helm_release" "supabase" {
     logflare_private_token   = var.logflare_private_token
   })]
 
-  depends_on = [aws_iam_role.storage_irsa, aws_s3_bucket.storage]
+  depends_on = [
+    aws_iam_role.storage_irsa,
+    aws_s3_bucket.storage,
+    kubernetes_persistent_volume_claim.edge_functions,
+  ]
 }

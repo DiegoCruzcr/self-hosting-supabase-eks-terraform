@@ -25,6 +25,14 @@ resource "aws_eks_addon" "ebs_csi_driver" {
   depends_on = [aws_eks_node_group.main]
 }
 
+resource "aws_eks_addon" "efs_csi_driver" {
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "aws-efs-csi-driver"
+  service_account_role_arn = aws_iam_role.efs_csi.arn
+
+  depends_on = [aws_eks_node_group.main, aws_efs_mount_target.functions]
+}
+
 # ─── IRSA: EBS CSI Driver ─────────────────────────────────────────────────────
 
 data "aws_iam_policy_document" "ebs_csi_assume" {
