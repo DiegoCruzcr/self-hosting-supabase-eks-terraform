@@ -7,7 +7,7 @@ NAMESPACE="supabase-alpha"
 CLUSTER_NAME="supabase-eks"
 REGION="us-east-1"
 HOST="alpha.example.com"
-ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyroleI6ImFub24iLCJpc3MiOiJzdXBhYmFzZSJ9.v1v_6Yv8TjSj8T_v8TjSj8T_v8TjSj8T_v8TjSj8T_v"
+ANON_KEY=""
 
 # ─── Colors ───────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
