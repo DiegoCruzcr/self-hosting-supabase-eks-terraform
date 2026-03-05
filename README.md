@@ -285,10 +285,12 @@ Then run `terraform apply`. Terraform creates only the new resources without rec
 
 ---
 
-## Security Notes
+## Security
 
+See [SECURITY.md](SECURITY.md) for a full list of known limitations in the default configuration, including network exposure, auth settings, secrets handling, and IAM scope — with remediation steps for each.
+
+Quick summary:
 - `projects.auto.tfvars` is **gitignored** — never commit real secrets
-- Storage API accesses S3 via **IRSA** (IAM Role for Service Accounts) — no static AWS keys in pods
+- Storage API accesses S3 via **IRSA** — no static AWS keys in pods
 - Postgres is **ClusterIP only** — not reachable outside the namespace
-- Kong ALB is internet-facing; restrict access by IP in production via ALB annotations
-- All inter-service traffic uses internal Kubernetes DNS (`supabase-<project>-db`) with SSL disabled (internal cluster network)
+- **Default config is not production-ready** — HTTP only, public signup open, no rate limiting. Review [SECURITY.md](SECURITY.md) before going live.
